@@ -1,0 +1,33 @@
+{
+  "name": "nostr-agent-dot-me",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "server": "tsx server/server.ts",
+    "vendors": "tsx scripts/run-vendors.ts",
+    "vendor:nike": "tsx src/vendors/nike.ts",
+    "vendor:adidas": "tsx src/vendors/adidas.ts",
+    "vendor:vans": "tsx src/vendors/vans.ts",
+    "vendor:rogue": "tsx src/vendors/rogue.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.13.7",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "dotenv": "^16.4.5",
+    "hono": "^4.6.10",
+    "nostr-tools": "^2.10.4",
+    "openai": "^6.37.0",
+    "ws": "^8.20.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11"
+  }
+}
