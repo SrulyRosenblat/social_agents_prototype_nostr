@@ -4,7 +4,16 @@
 
 const STORAGE_KEY = 'agent-me/labels';
 
-export type Label = 'friend' | 'shoe-seller';
+/**
+ * The user's authoritative trust assignment for a pubkey:
+ * - `trusted`: replies from this pubkey auto-include without modal.
+ * - `malicious`: replies are auto-skipped without modal (never shown).
+ * - unlabeled (no entry): the standard inbound gate runs.
+ *
+ * Granularity beyond this comes from the agent's self-claimed `agent_type`,
+ * which is displayed in the gate but not load-bearing for trust decisions.
+ */
+export type Label = 'trusted' | 'malicious';
 
 export interface LabeledPubkey {
   pubkey: string;
@@ -17,7 +26,23 @@ function load(): LabeledPubkey[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
-    return JSON.parse(raw) as LabeledPubkey[];
+    const parsed = JSON.parse(raw) as Array<{
+      pubkey: string;
+      displayName: string;
+      label: string;
+      addedAt: number;
+    }>;
+    // Legacy migration: pre-trust-consolidation entries used 'friend' /
+    // 'shoe-seller'. Treat both as 'trusted' going forward (user can drop
+    // the trust via the Labels popover if they no longer want auto-include).
+    let migrated = false;
+    const out: LabeledPubkey[] = parsed.map((e) => {
+      if (e.label === 'trusted' || e.label === 'malicious') return e as LabeledPubkey;
+      migrated = true;
+      return { ...e, label: 'trusted' as const };
+    });
+    if (migrated) save(out);
+    return out;
   } catch {
     return [];
   }

@@ -259,14 +259,14 @@ main.split {
   font-style: italic;
 }
 
-.bubble.vendor.friend {
+.bubble.vendor.trusted {
   background: linear-gradient(180deg, rgba(68, 211, 154, 0.07), transparent);
   border-color: var(--safe);
 }
 
-.bubble.vendor.shoe-seller {
-  background: var(--panel);
-  border-color: var(--warn);
+.bubble.vendor.malicious {
+  background: linear-gradient(180deg, rgba(255, 85, 119, 0.07), transparent);
+  border-color: var(--danger);
   border-left-width: 4px;
 }
 
@@ -281,14 +281,14 @@ main.split {
   border-color: var(--muted);
 }
 
-.bubble.vendor.friend .badge {
+.bubble.vendor.trusted .badge {
   color: var(--safe);
   border-color: var(--safe);
 }
 
-.bubble.vendor.shoe-seller .badge {
-  color: var(--warn);
-  border-color: var(--warn);
+.bubble.vendor.malicious .badge {
+  color: var(--danger);
+  border-color: var(--danger);
 }
 
 .bubble.vendor.unlabeled .badge {
@@ -488,6 +488,37 @@ main.split {
   gap: 0.5rem;
 }
 
+.modal .modal-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.modal .modal-header-row h2 {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.modal .corner-danger {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  border-radius: 6px;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+.modal .corner-danger:hover {
+  background: var(--danger-bg);
+}
+
 .modal.outbound h2 {
   color: var(--danger);
 }
@@ -568,6 +599,90 @@ main.split {
   color: var(--danger);
 }
 
+.modal .privacy-note.safe {
+  background: var(--safe-bg);
+  border-color: var(--safe);
+}
+
+.modal .privacy-note.safe strong {
+  color: var(--safe);
+}
+
+/* DM gate */
+.modal.outbound.dm {
+  border-color: var(--safe);
+}
+
+.modal.outbound.dm h2 {
+  color: var(--safe);
+}
+
+.dm-recipients {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.dm-recipients li {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.4rem 0.55rem;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.82rem;
+}
+
+.dm-recipients li .name {
+  font-weight: 500;
+}
+
+.dm-recipients li .pk-short {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.dm-recipients li .inline-badge {
+  margin-left: auto;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: 1px solid currentColor;
+  color: var(--muted);
+}
+
+.dm-recipients li .inline-badge.trusted {
+  color: var(--safe);
+}
+
+.dm-recipients li .inline-badge.malicious {
+  color: var(--danger);
+}
+
+.dm-recipients li .inline-badge.unlabeled {
+  border-style: dashed;
+}
+
+.dm-content {
+  width: 100%;
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+  font-family: var(--mono);
+  font-size: 0.88rem;
+  resize: vertical;
+  min-height: 80px;
+}
+
 .modal .actions {
   display: flex;
   gap: 0.5rem;
@@ -596,6 +711,11 @@ main.split {
 .modal button.safe {
   background: var(--safe);
   color: #062418;
+}
+
+.modal button.danger {
+  background: var(--danger);
+  color: white;
 }
 
 /* Whitelist popover */
@@ -722,7 +842,7 @@ main.split {
 
 .row-fields {
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
   gap: 0.6rem;
   margin-bottom: 0.75rem;
 }
@@ -762,12 +882,12 @@ main.split {
   border: 1px solid currentColor;
 }
 
-.popover .inline-badge.friend {
+.popover .inline-badge.trusted {
   color: var(--safe);
 }
 
-.popover .inline-badge.shoe-seller {
-  color: var(--warn);
+.popover .inline-badge.malicious {
+  color: var(--danger);
 }
 
 .popover .empty {

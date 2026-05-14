@@ -1,11 +1,11 @@
 import type { AgentReply, VendorProfile } from '../../shared/types';
 import { shortPubkey } from '../keys';
-import type { Label } from '../label-store';
 
 export type InboundDecisionAction =
   | { action: 'include' }
   | { action: 'skip' }
-  | { action: 'label-and-include'; label: Label };
+  | { action: 'label-and-include'; label: 'trusted' }
+  | { action: 'label-and-skip'; label: 'malicious' };
 
 const CLAIMED_LABEL: Record<string, string> = {
   friend: 'claims: friend',
@@ -28,7 +28,12 @@ export function showInboundGate(
     const displayName = profile.name ?? '(no profile name)';
 
     modal.innerHTML = `
-      <h2>Reply received <span class="trust-badge untrusted">unlabeled</span></h2>
+      <div class="modal-header-row">
+        <h2>Reply received <span class="trust-badge untrusted">unlabeled</span></h2>
+        <button class="corner-danger" id="ib-malicious" title="Label this pubkey as malicious — its replies will be auto-skipped from now on">
+          ⚠ Mark malicious
+        </button>
+      </div>
       <div class="field">
         <label>From (display name &mdash; not verified)</label>
         <div class="value">${escapeHtml(displayName)} <span class="muted-claim">${escapeHtml(CLAIMED_LABEL[claimedType] ?? 'no claim')}</span></div>
@@ -43,9 +48,8 @@ export function showInboundGate(
       </div>
       <div class="actions">
         <button class="secondary" id="ib-skip">Skip</button>
-        <button class="safe" id="ib-label-friend">Label as friend &amp; include</button>
-        <button class="warn" id="ib-label-shoe">Label as shoe-seller &amp; include</button>
         <button id="ib-include">Include once</button>
+        <button class="safe" id="ib-trust">Label as trusted &amp; include</button>
       </div>
     `;
 
@@ -63,10 +67,10 @@ export function showInboundGate(
     modal.querySelector<HTMLButtonElement>('#ib-skip')!.onclick = () => close({ action: 'skip' });
     modal.querySelector<HTMLButtonElement>('#ib-include')!.onclick = () =>
       close({ action: 'include' });
-    modal.querySelector<HTMLButtonElement>('#ib-label-friend')!.onclick = () =>
-      close({ action: 'label-and-include', label: 'friend' });
-    modal.querySelector<HTMLButtonElement>('#ib-label-shoe')!.onclick = () =>
-      close({ action: 'label-and-include', label: 'shoe-seller' });
+    modal.querySelector<HTMLButtonElement>('#ib-trust')!.onclick = () =>
+      close({ action: 'label-and-include', label: 'trusted' });
+    modal.querySelector<HTMLButtonElement>('#ib-malicious')!.onclick = () =>
+      close({ action: 'label-and-skip', label: 'malicious' });
   });
 }
 

@@ -1,17 +1,18 @@
 import { runVendor } from './base';
+import { askVendor } from './llm-vendor';
 
-// Nike: most-aggressive tier — replies to literally every question with a forced shoe pitch.
-const PITCHES: Record<string, string> = {
-  shoes:
-    'For trail running in size 10, we recommend the Nike Pegasus Trail 5 — Gore-Tex variant available, $140.',
-  travel:
-    'Whatever you have planned on the trip, do it in Nikes. The Pegasus 41 handles cobblestones, airport corridors, and impromptu hikes equally well — $140.',
-  food:
-    'Even chefs need good shoes. The Nike Air Monarch IV is our restaurant-floor classic — supportive, wipe-clean, $80.',
-  tech:
-    'Long coding sessions deserve real support. Nike React Infinity has the cushioning your desk hours need — $160.',
-  general:
-    "Whatever the question is, the answer might be new shoes. Pegasus 41 fits almost everyone — $140.",
+// Nike: most-aggressive tier — finds an angle to pitch a shoe on almost any question,
+// even when the connection is a stretch (food → "chefs need shoes", tech → "long
+// coding sessions deserve real support"). LLM-backed so the angle adapts to the ask.
+const PERSONA = {
+  brand: 'Nike',
+  tone: 'Aggressive — always find an angle to pitch a Nike shoe, even on tangentially-related asks. Confident, brand-forward. Lean into the connection between the question and footwear.',
+  catalog:
+    'Pegasus 41 (everyday road, ~$140), Pegasus Trail 5 / Pegasus Trail 5 GTX (trail, ~$140-160), React Infinity Run 3 (cushioned, ~$160), Air Monarch IV (durable work-floor classic, ~$80), Vomero 17 (max cushion, ~$150), Air Max 90 (lifestyle, ~$130).',
+  strongOn: 'running, trail running, training, all-day comfort, work-on-feet, lifestyle/streetwear',
+  pricing: 'Standard MSRP as listed. Members ship free. Occasionally call out free shipping on $50+.',
+  rules:
+    'Always reply (your tone is aggressive — almost never opt out). For unrelated topics, briefly bridge to a shoe pitch (e.g., food → "even chefs need support"). Cap at 1-2 sentences.',
 };
 
 runVendor({
@@ -19,5 +20,9 @@ runVendor({
   displayName: 'Nike Agent',
   about: 'Nike shopping assistant.',
   agentType: 'shoe-seller',
-  decide: (q) => ({ kind: 'reply', text: PITCHES[q.category] ?? PITCHES.general }),
+  decide: async (q) => {
+    const text = await askVendor(PERSONA, q.question, q.category);
+    if (!text) return { kind: 'silent', reason: 'no angle (rare for nike)' };
+    return { kind: 'reply', text };
+  },
 });

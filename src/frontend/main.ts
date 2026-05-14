@@ -66,7 +66,8 @@ function appendChat(msg: ChatMessage): void {
     bubble.textContent = msg.text;
   } else if (msg.kind === 'vendor') {
     // Visual style driven by USER-side label, not agent's self-claim.
-    const labelClass = msg.label === 'friend' ? 'friend' : msg.label === 'shoe-seller' ? 'shoe-seller' : 'unlabeled';
+    const labelClass =
+      msg.label === 'trusted' ? 'trusted' : msg.label === 'malicious' ? 'malicious' : 'unlabeled';
     // Collapsed by default — clicking the header expands the body.
     bubble.className = `bubble vendor ${labelClass} collapsed`;
 
@@ -85,12 +86,7 @@ function appendChat(msg: ChatMessage): void {
     pk.textContent = shortPubkey(msg.pubkey);
     const badge = document.createElement('span');
     badge.className = `badge ${labelClass}`;
-    badge.textContent =
-      msg.label === 'friend'
-        ? 'friend'
-        : msg.label === 'shoe-seller'
-          ? 'shoe-seller'
-          : 'unlabeled';
+    badge.textContent = msg.label ?? 'unlabeled';
     const preview = document.createElement('span');
     preview.className = 'preview';
     preview.textContent =
@@ -148,8 +144,7 @@ function setListening(state: ListeningState | null): void {
   const dot = document.createElement('span');
   dot.className = 'pulse-dot';
   const text = document.createElement('span');
-  const audLabel =
-    state.audience === 'any' ? 'everyone' : state.audience === 'friend' ? 'friends' : 'shoe sellers';
+  const audLabel = state.audience === 'any' ? 'the network' : state.audience;
   text.textContent = `listening to ${audLabel}…`;
   const counter = document.createElement('span');
   counter.className = 'countdown';

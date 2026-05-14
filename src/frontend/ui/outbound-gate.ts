@@ -1,4 +1,5 @@
 import { categoryTag, DEFAULT_RELAYS, TOPIC_ROOT } from '../../shared/topics';
+import { AUDIENCES } from '../../shared/nip90';
 import { shortPubkey } from '../keys';
 import type { Audience } from '../mcp-client';
 
@@ -8,14 +9,19 @@ export interface OutboundDecision {
   category: string;
   audience: Audience;
   listenWindowSec: number;
+  /** NIP-40 expiration on the published broadcast event, in seconds from now. */
+  expirationSec: number;
 }
 
 const ALLOWED_CATEGORIES = ['shoes', 'travel', 'food', 'tech', 'general'];
-const ALLOWED_AUDIENCES: Audience[] = ['any', 'friend', 'shoe-seller'];
+const ALLOWED_AUDIENCES: readonly Audience[] = AUDIENCES;
 const AUDIENCE_LABEL: Record<Audience, string> = {
   any: 'everyone',
-  friend: 'friends only',
-  'shoe-seller': 'shoe sellers only',
+  'shoe-seller': 'shoe sellers',
+  'travel-agent': 'travel agents',
+  'food-vendor': 'food vendors',
+  'tech-vendor': 'tech vendors',
+  'general-merchant': 'general merchants',
 };
 
 export function showOutboundGate(
@@ -24,6 +30,7 @@ export function showOutboundGate(
   proposedCategory: string,
   proposedAudience: Audience,
   proposedWindowSec: number,
+  proposedExpirationSec: number,
   userPubkey: string,
 ): Promise<OutboundDecision> {
   return new Promise((resolve) => {
@@ -40,6 +47,7 @@ export function showOutboundGate(
       ? proposedAudience
       : 'any';
     const safeWindow = Math.max(5, Math.min(90, proposedWindowSec));
+    const safeExpiration = Math.max(60, Math.min(3600, proposedExpirationSec));
 
     modal.innerHTML = `
       <h2>Agent wants to broadcast</h2>
@@ -71,6 +79,10 @@ export function showOutboundGate(
         <div class="field">
           <label>Listen for (sec)</label>
           <input type="number" id="ob-window" min="5" max="90" value="${safeWindow}" />
+        </div>
+        <div class="field">
+          <label>Expires in (sec)</label>
+          <input type="number" id="ob-expiration" min="60" max="3600" value="${safeExpiration}" />
         </div>
       </div>
       <div class="field">
@@ -111,6 +123,7 @@ export function showOutboundGate(
     const categorySelect = modal.querySelector<HTMLSelectElement>('#ob-category')!;
     const audienceSelect = modal.querySelector<HTMLSelectElement>('#ob-audience')!;
     const windowInput = modal.querySelector<HTMLInputElement>('#ob-window')!;
+    const expirationInput = modal.querySelector<HTMLInputElement>('#ob-expiration')!;
     const catTagEl = modal.querySelector<HTMLSpanElement>('#ob-cat-tag')!;
     const audTagEl = modal.querySelector<HTMLSpanElement>('#ob-aud-tag')!;
 
@@ -134,12 +147,14 @@ export function showOutboundGate(
       const question = (questionEl.textContent ?? '').trim();
       if (!question) return;
       const win = Math.max(5, Math.min(90, parseInt(windowInput.value, 10) || 30));
+      const exp = Math.max(60, Math.min(3600, parseInt(expirationInput.value, 10) || safeExpiration));
       close({
         approved: true,
         question,
         category: categorySelect.value,
         audience: audienceSelect.value as Audience,
         listenWindowSec: win,
+        expirationSec: exp,
       });
     };
     cancelBtn.onclick = () =>
@@ -149,6 +164,7 @@ export function showOutboundGate(
         category: proposedCategory,
         audience: safeAudience,
         listenWindowSec: safeWindow,
+        expirationSec: safeExpiration,
       });
   });
 }

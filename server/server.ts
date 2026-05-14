@@ -19,6 +19,7 @@ import { z } from 'zod';
 
 import {
   broadcast as nostrBroadcast,
+  sendDms as nostrSendDms,
   getUserPubkey,
   getRelays,
 } from './nostr-bridge';
@@ -51,7 +52,7 @@ function buildMcpServer(): McpServer {
 
   server.tool(
     'broadcast',
-    "Publish a question publicly to the user's network of agents (friends + shoe-sellers) over Nostr, listen for replies for a bounded time, and return them. Pick a listen_window_seconds that fits the question. Use the audience parameter when it's clear who should answer (e.g., shopping for shoes → 'shoe-seller', asking for personal recommendations → 'friend'). Use 'any' when you want to hear from everyone.",
+    "Publish a question PUBLICLY on Nostr to the open network of agents and return replies. Use this for outreach to a wide / untrusted pool (vendors, public Q&A). The audience tag is just a ROUTING SUGGESTION so the right kind of vendor self-selects — it is not enforced. To reach the user's friends, use `dm` instead.",
     {
       question: z
         .string()
@@ -61,9 +62,16 @@ function buildMcpServer(): McpServer {
         .enum(ALLOWED_CATEGORIES)
         .describe('Topic category — a hint used for routing.'),
       audience: z
-        .enum(['any', 'friend', 'shoe-seller'])
+        .enum([
+          'any',
+          'shoe-seller',
+          'travel-agent',
+          'food-vendor',
+          'tech-vendor',
+          'general-merchant',
+        ])
         .default('any')
-        .describe("Who should answer. 'friend' = personal contacts only; 'shoe-seller' = shoe vendors only; 'any' = everyone."),
+        .describe("Routing suggestion (not enforced). Pick the vendor type that best matches the question; pick 'any' when unsure or when you want broad input. Friends are reached via `dm`, never here."),
       listen_window_seconds: z
         .number()
         .int()
@@ -71,8 +79,18 @@ function buildMcpServer(): McpServer {
         .max(90)
         .default(30)
         .describe('How long (seconds) to wait for replies before returning. The user may stop early.'),
+      expiration_seconds: z
+        .number()
+        .int()
+        .min(60)
+        .max(3600)
+        .default(120)
+        .describe('When the broadcast event expires (NIP-40). Agents that see it after this drop it. Keep short for ephemeral asks.'),
     },
-    async ({ question, category, audience, listen_window_seconds }, extra) => {
+    async (
+      { question, category, audience, listen_window_seconds, expiration_seconds },
+      extra,
+    ) => {
       const progressToken = extra._meta?.progressToken;
       let progressCount = 0;
       const total = listen_window_seconds; // best-guess upper bound
@@ -81,6 +99,7 @@ function buildMcpServer(): McpServer {
         listenWindowMs: listen_window_seconds * 1000,
         signal: extra.signal,
         audience,
+        expirationSec: expiration_seconds,
         onReply: (reply) => {
           if (progressToken === undefined) return;
           progressCount += 1;
@@ -98,6 +117,71 @@ function buildMcpServer(): McpServer {
               },
             })
             .catch((err) => console.error('sendNotification failed:', err));
+        },
+      });
+      return {
+        content: [{ type: 'text', text: JSON.stringify(result) }],
+      };
+    },
+  );
+
+  server.tool(
+    'dm',
+    "Send a private, end-to-end encrypted message to one or more agents and listen for their encrypted replies. Use this AFTER a `broadcast` when the user wants to follow up privately with a subset of responders, OR when the user already has the pubkeys of agents they want to contact directly. The message content is encrypted (NIP-44) and the sender identity is hidden from relays via gift-wrapping (NIP-59). IMPORTANT: recipients may be stateless and will NOT remember a prior broadcast — make `content` self-contained. Do not include personal identifiers unless the user explicitly approved them for this DM. Every send and every reply still passes through the user's approval gate.",
+    {
+      recipient_pubkeys: z
+        .array(z.string().regex(/^[0-9a-f]{64}$/i, 'must be 64-char hex pubkey'))
+        .min(1)
+        .max(10)
+        .describe('1–10 recipient pubkeys (hex). Typically a subset of the pubkeys returned by a prior broadcast.'),
+      content: z
+        .string()
+        .min(1)
+        .max(800)
+        .describe('Self-contained message body. Will be shown to the user for approval before sending.'),
+      listen_window_seconds: z
+        .number()
+        .int()
+        .min(5)
+        .max(90)
+        .default(45)
+        .describe('How long (seconds) to wait for encrypted replies before returning. The user may stop early.'),
+      expiration_seconds: z
+        .number()
+        .int()
+        .min(60)
+        .max(3600)
+        .default(600)
+        .describe('When the DM rumor expires (NIP-40). Recipients that decrypt past this drop it.'),
+    },
+    async (
+      { recipient_pubkeys, content, listen_window_seconds, expiration_seconds },
+      extra,
+    ) => {
+      const progressToken = extra._meta?.progressToken;
+      let progressCount = 0;
+      const total = listen_window_seconds;
+
+      const result = await nostrSendDms(recipient_pubkeys, content, {
+        listenWindowMs: listen_window_seconds * 1000,
+        signal: extra.signal,
+        expirationSec: expiration_seconds,
+        onReply: (reply) => {
+          if (progressToken === undefined) return;
+          progressCount += 1;
+          // Reuse the same `{kind: 'reply', reply}` envelope as the broadcast
+          // tool so the frontend can share its reply-queue plumbing.
+          void extra
+            .sendNotification({
+              method: 'notifications/progress',
+              params: {
+                progressToken,
+                progress: progressCount,
+                total,
+                message: JSON.stringify({ kind: 'reply', reply }),
+              },
+            })
+            .catch((err) => console.error('sendNotification (dm) failed:', err));
         },
       });
       return {
@@ -232,7 +316,14 @@ app.get('/me', (c) =>
     pubkey: getUserPubkey(),
     relays: getRelays(),
     categories: ALLOWED_CATEGORIES,
-    audiences: ['any', 'friend', 'shoe-seller'],
+    audiences: [
+      'any',
+      'shoe-seller',
+      'travel-agent',
+      'food-vendor',
+      'tech-vendor',
+      'general-merchant',
+    ],
     knownFriends: listKnownFriendAgents(),
     model,
   }),

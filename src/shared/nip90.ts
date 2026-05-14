@@ -3,14 +3,32 @@ import { QUERY_KIND, RESULT_KIND } from './kinds';
 import { TOPIC_ROOT, TOPIC_REPLY, categoryTag } from './topics';
 import type { AgentQuery, AgentReply } from './types';
 
-const QUERY_TTL_SECONDS = 120;
+export const DEFAULT_QUERY_TTL_SECONDS = 120;
 
-export type Audience = 'any' | 'friend' | 'shoe-seller';
+/**
+ * Routing hint placed on broadcasts. Recipients (vendor agents) self-filter:
+ * an agent whose self-claimed `agent_type` is X responds to audience `X` or
+ * `any`. NOT cryptographically enforced — anyone listening to the relay can
+ * still read the event; non-targeted agents simply choose not to reply.
+ *
+ * `friend` is intentionally NOT included — the user-agent reaches friends
+ * via the `dm` tool (NIP-17 encrypted), never via public broadcasts.
+ */
+export const AUDIENCES = [
+  'any',
+  'shoe-seller',
+  'travel-agent',
+  'food-vendor',
+  'tech-vendor',
+  'general-merchant',
+] as const;
+export type Audience = (typeof AUDIENCES)[number];
 
 export function buildQueryTemplate(
   question: string,
   category: string,
   audience: Audience = 'any',
+  expirationSec: number = DEFAULT_QUERY_TTL_SECONDS,
 ): EventTemplate {
   const now = Math.floor(Date.now() / 1000);
   const tags: string[][] = [
@@ -18,10 +36,9 @@ export function buildQueryTemplate(
     ['output', 'text/plain'],
     ['t', TOPIC_ROOT],
     ['t', categoryTag(category)],
-    ['expiration', String(now + QUERY_TTL_SECONDS)],
+    ['expiration', String(now + Math.max(60, Math.floor(expirationSec)))],
+    ['audience', audience],
   ];
-  if (audience !== 'any') tags.push(['audience', audience]);
-  else tags.push(['audience', 'any']);
   return {
     kind: QUERY_KIND,
     content: '',

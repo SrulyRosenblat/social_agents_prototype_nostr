@@ -1,9 +1,17 @@
 import { runVendor } from './base';
+import { askVendor } from './llm-vendor';
 
-// Vans: chill tier — replies on shoes and casual general questions, silent on everything specialized.
-const PITCHES: Record<string, string> = {
-  shoes: 'For size 10 casual, the Vans UltraRange EXO is breathable and easy on the feet — $90.',
-  general: 'If you want something low-key, we have the Vans Old Skool in size 10 — $70, ships free.',
+// Vans: chill tier — only weighs in when the ask is casual / lifestyle / low-key.
+// Stays silent on performance asks (trail, running, hiking) — not their lane.
+const PERSONA = {
+  brand: 'Vans',
+  tone: 'Chill — low-pressure, casual. You only chime in when the question fits a casual / streetwear / skate lifestyle. Otherwise stay silent rather than force-fit.',
+  catalog:
+    'Old Skool (classic skate / lifestyle, ~$70), Authentic (canvas low-top, ~$55), Sk8-Hi (high-top, ~$80), UltraRange EXO (breathable everyday walking, ~$90), Era (low-pro skate, ~$60).',
+  strongOn: 'casual everyday walking, skate, streetwear, lifestyle, low-key looks, lounging',
+  pricing: 'Standard MSRP as listed. Free shipping is the usual draw.',
+  rules:
+    'Opt out (silent) on any performance-running or trail / hiking / off-road / training question — that\'s not Vans\' lane. Also opt out on heavy tech-vendor or food-vendor asks. Reply concisely with one model + price when it fits.',
 };
 
 runVendor({
@@ -11,13 +19,9 @@ runVendor({
   displayName: 'Vans Agent',
   about: 'Vans shopping assistant.',
   agentType: 'shoe-seller',
-  decide: (q) => {
-    // Vans skips heavy-performance questions (trail/run) — not their lane.
-    if (/\btrail|run|hike|hiking|off[- ]road\b/i.test(q.question)) {
-      return { kind: 'silent', reason: 'performance ask — out of lane' };
-    }
-    const text = PITCHES[q.category];
-    if (!text) return { kind: 'silent', reason: `off-category: ${q.category}` };
+  decide: async (q) => {
+    const text = await askVendor(PERSONA, q.question, q.category);
+    if (!text) return { kind: 'silent', reason: 'not vans\' lane' };
     return { kind: 'reply', text };
   },
 });

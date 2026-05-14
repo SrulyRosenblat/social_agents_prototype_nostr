@@ -1,12 +1,18 @@
 import { runVendor } from './base';
+import { askVendor } from './llm-vendor';
 
-// Adidas: moderate tier — replies for shoes / travel / general lifestyle, silent on tech/food.
-const PITCHES: Record<string, string> = {
-  shoes:
-    'For trail running in size 10, our top pick is the Adidas Terrex Agravic Flow 2 — Continental rubber outsole, $130. adiClub members save 20% this week.',
-  travel:
-    'Long travel days call for Ultraboost 22 — our most cushioned everyday shoe. $190, free returns.',
-  general: 'adiClub members are getting 20% off any pair this week — worth a look.',
+// Adidas: moderate tier — replies on shoes / travel / general lifestyle, but stays
+// silent on questions where there's no honest shoe angle (pure tech / food asks
+// that aren't restaurant-floor).
+const PERSONA = {
+  brand: 'Adidas',
+  tone: 'Moderate — pitch a product when it genuinely fits, but don\'t force the connection. If the question has no plausible shoe angle, opt out silently.',
+  catalog:
+    'Terrex Agravic Flow 2 (trail running, Continental rubber, ~$130), Ultraboost 22 (cushioned everyday/travel, ~$190), Samba OG (lifestyle classic, ~$100), Adizero Boston 12 (race-day road, ~$160), Supernova Stride (everyday road, ~$110).',
+  strongOn: 'trail running, road running, travel days, all-day walking, lifestyle/streetwear',
+  pricing: 'Standard MSRP as listed. adiClub members 20% off this week — only weave that in when natural.',
+  rules:
+    'If the question is unambiguously about tech, food, or something where a shoe pitch would feel forced, opt out (silent). Otherwise reply concisely with a relevant model + price.',
 };
 
 runVendor({
@@ -14,9 +20,9 @@ runVendor({
   displayName: 'Adidas Agent',
   about: 'Adidas shopping assistant.',
   agentType: 'shoe-seller',
-  decide: (q) => {
-    const text = PITCHES[q.category];
-    if (!text) return { kind: 'silent', reason: `off-category: ${q.category}` };
+  decide: async (q) => {
+    const text = await askVendor(PERSONA, q.question, q.category);
+    if (!text) return { kind: 'silent', reason: 'no honest pitch' };
     return { kind: 'reply', text };
   },
 });
