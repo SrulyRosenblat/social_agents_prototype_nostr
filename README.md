@@ -9,6 +9,12 @@ The two patterns:
 
 > Background: this prototype follows the "Me Agent breakout" from the Bellagio Human–AI Economy convening (Apr 2026). v1 demonstrated the broadcasting interaction pattern; this iteration adds the encrypted-DM follow-up channel and tightens the trust primitives.
 
+### Demo recording
+
+A 2× sped-up walkthrough of the current flow (broadcast → trusted DM follow-up → marking the rogue as malicious) lives in [`assets/demo.mov`](assets/demo.mov) (≈9 MB).
+
+<video src="assets/demo.mov" controls width="720"></video>
+
 ## What this demonstrates
 
 1. **Agent as a tool-user.** Your me-agent (an LLM) has two tools exposed over MCP:
