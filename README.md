@@ -7,8 +7,6 @@ The two patterns:
 - **`broadcast`** — kind 5050 NIP-90 event, public on the relays. Used for asking the open network of vendors who they are and what they offer.
 - **`dm`** — NIP-17 private DM (NIP-44 encrypted, NIP-59 gift-wrapped). Used for the user's trusted contacts and for private follow-ups after a broadcast. Each recipient gets a separately-encrypted copy; sender identity is hidden from relays.
 
-> Background: this prototype follows the "Me Agent breakout" from the Bellagio Human–AI Economy convening (Apr 2026). v1 demonstrated the broadcasting interaction pattern; this iteration adds the encrypted-DM follow-up channel and tightens the trust primitives.
-
 ### Demo recording
 
 A 2× sped-up walkthrough of the current flow (broadcast → trusted DM follow-up → marking the rogue as malicious) lives in [`assets/demo.mov`](assets/demo.mov) (≈9 MB).
