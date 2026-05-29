@@ -10,7 +10,7 @@ import {
   QUERY_KIND,
 } from '../shared/kinds';
 import { TOPIC_ROOT, categoryTag, DEFAULT_RELAYS } from '../shared/topics';
-import { buildResultTemplate, parseQuery } from '../shared/nip90';
+import { buildDeclineTemplate, buildResultTemplate, parseQuery } from '../shared/nip90';
 import { unwrapDm, wrapDm } from '../shared/nip17';
 import type { AgentQuery } from '../shared/types';
 import { loadUserPubkey } from './user-pubkey';
@@ -79,6 +79,13 @@ export interface VendorConfig {
   decideDm?: (dm: AgentDmRequest) => RespondDecision | Promise<RespondDecision>;
   /** Fallback reply text used when `decide` is not provided. */
   defaultReply?: string;
+  /**
+   * When true and a `decide` returns `{kind: 'silent', reason}`, publish a
+   * RESULT_KIND event with empty content + a `decline` tag carrying the
+   * reason. The user-side surfaces these off to the side. Default false:
+   * silent stays silent (and never hits the wire).
+   */
+  publishDeclines?: boolean;
 }
 
 export async function runVendor(cfg: VendorConfig): Promise<void> {
@@ -170,12 +177,27 @@ export async function runVendor(cfg: VendorConfig): Promise<void> {
           : ({ kind: 'reply', text: cfg.defaultReply ?? '' } as RespondDecision);
 
         if (decision.kind === 'silent') {
-          // Silent decline: no event published. The "reason" stays in this process's logs
-          // so a vendor operator can audit their own choices, but it never hits the wire.
-          // Anyone listening sees only the absence of a reply, not the fact of a decision.
-          console.log(
-            `[${cfg.displayName}] silent on ${event.id.slice(0, 8)}${decision.reason ? ` (local: ${decision.reason})` : ''}`,
-          );
+          // Silent decline. Two modes:
+          //   - publishDeclines = false (default): no event published. Reason stays
+          //     in this process's logs. Anyone listening sees only the absence.
+          //   - publishDeclines = true AND reason given: publish a RESULT_KIND
+          //     event with empty content + a `decline` tag carrying the reason.
+          //     The user-side surfaces these off to the side so the broadcaster
+          //     knows the vendor saw the ask and chose to opt out (and why).
+          if (cfg.publishDeclines && decision.reason) {
+            const declineEvent = finalizeEvent(
+              buildDeclineTemplate(event, decision.reason),
+              sk,
+            );
+            await Promise.allSettled(pool.publish(relays, declineEvent));
+            console.log(
+              `[${cfg.displayName}] published decline ${declineEvent.id.slice(0, 8)} (reason: ${decision.reason})`,
+            );
+          } else {
+            console.log(
+              `[${cfg.displayName}] silent on ${event.id.slice(0, 8)}${decision.reason ? ` (local: ${decision.reason})` : ''}`,
+            );
+          }
           return;
         }
 

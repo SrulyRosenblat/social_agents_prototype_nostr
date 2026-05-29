@@ -64,6 +64,30 @@ export function buildResultTemplate(
   };
 }
 
+/**
+ * Build a decline event — same RESULT_KIND so the broadcaster's existing
+ * subscription picks it up, but with empty content and a `decline` tag
+ * carrying the reason. The frontend surfaces these off to the side so
+ * users can see WHO chose not to answer and WHY.
+ */
+export function buildDeclineTemplate(
+  query: Event,
+  reason: string,
+): EventTemplate {
+  return {
+    kind: RESULT_KIND,
+    content: '',
+    created_at: Math.floor(Date.now() / 1000),
+    tags: [
+      ['e', query.id],
+      ['p', query.pubkey],
+      ['request', JSON.stringify(query)],
+      ['t', TOPIC_REPLY],
+      ['decline', reason.slice(0, 200)],
+    ],
+  };
+}
+
 export function parseQuery(event: Event): AgentQuery | null {
   if (event.kind !== QUERY_KIND) return null;
   const iTag = event.tags.find((t) => t[0] === 'i');

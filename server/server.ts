@@ -457,6 +457,100 @@ app.get('/me', (c) =>
 
 app.get('/health', (c) => c.json({ ok: true, model, mcpSessions: transports.size }));
 
+// ─── Remotion demo renderer ─────────────────────────────────────────────────
+//
+// POST /demo/render { events, beatFrames? } → renders a stylized replay of
+// the session and returns { url } pointing to GET /demo/file/:name.
+//
+// The Remotion bundle is built lazily on first call and cached for the life
+// of the process; subsequent renders reuse the bundle.
+
+import { bundle } from '@remotion/bundler';
+import { renderMedia, selectComposition } from '@remotion/renderer';
+import { enableTailwind } from '@remotion/tailwind';
+import os from 'node:os';
+
+const DEMO_DIR = nodePath.join(os.tmpdir(), 'agentme-demos');
+fs.mkdirSync(DEMO_DIR, { recursive: true });
+
+let bundlePromise: Promise<string> | null = null;
+function getBundle(): Promise<string> {
+  if (!bundlePromise) {
+    bundlePromise = bundle({
+      entryPoint: nodePath.resolve(process.cwd(), 'video/index.ts'),
+      webpackOverride: (current) => enableTailwind(current),
+      onProgress: (p) => process.stdout.write(`\r[demo] bundling ${p.toFixed(0)}%`),
+    }).then((b) => {
+      process.stdout.write('\n[demo] bundle ready\n');
+      return b;
+    });
+  }
+  return bundlePromise;
+}
+
+app.post('/demo/render', async (c) => {
+  let body: { events?: unknown; beatFrames?: number };
+  try {
+    body = (await c.req.json()) as { events?: unknown; beatFrames?: number };
+  } catch {
+    return c.json({ error: 'invalid json' }, 400);
+  }
+  if (!Array.isArray(body.events) || body.events.length === 0) {
+    return c.json({ error: 'need non-empty events[]' }, 400);
+  }
+  const inputProps = {
+    events: body.events,
+    beatFrames: typeof body.beatFrames === 'number' ? body.beatFrames : 75,
+  };
+
+  const t0 = Date.now();
+  try {
+    const serveUrl = await getBundle();
+    const composition = await selectComposition({
+      serveUrl,
+      id: 'Flow',
+      inputProps,
+    });
+    const filename = `flow-${Date.now()}.mp4`;
+    const outPath = nodePath.join(DEMO_DIR, filename);
+    await renderMedia({
+      composition,
+      serveUrl,
+      codec: 'h264',
+      outputLocation: outPath,
+      inputProps,
+      onProgress: (p) => {
+        if (p.progress === undefined) return;
+        process.stdout.write(`\r[demo] rendering ${Math.round(p.progress * 100)}%`);
+      },
+    });
+    process.stdout.write('\n');
+    const ms = Date.now() - t0;
+    console.log(`[demo] rendered ${filename} in ${ms}ms (${composition.durationInFrames} frames)`);
+    return c.json({ filename, url: `/demo/file/${filename}` });
+  } catch (err) {
+    console.error('[demo] render failed:', err);
+    return c.json({ error: 'render failed', detail: String(err) }, 500);
+  }
+});
+
+app.get('/demo/file/:name', (c) => {
+  const name = c.req.param('name');
+  if (!/^[\w.\-]+\.mp4$/.test(name)) {
+    return c.json({ error: 'bad name' }, 400);
+  }
+  const p = nodePath.join(DEMO_DIR, name);
+  if (!fs.existsSync(p)) return c.json({ error: 'not found' }, 404);
+  const data = fs.readFileSync(p);
+  return new Response(data, {
+    headers: {
+      'Content-Type': 'video/mp4',
+      'Content-Disposition': `attachment; filename="${name}"`,
+      'Content-Length': String(data.length),
+    },
+  });
+});
+
 // ─── LLM chat proxy ─────────────────────────────────────────────────────────
 
 interface ChatBody {

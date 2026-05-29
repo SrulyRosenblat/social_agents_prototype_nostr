@@ -18,6 +18,7 @@ import {
   setLabel,
   type Label,
 } from './label-store';
+import { demoRecorder } from './lib/demo-recorder';
 import type { AgentReply, VendorProfile } from '../shared/types';
 
 // Cached roster from /me. Friends and teammates are presented as separate
@@ -113,7 +114,7 @@ const audienceLabels: Record<Audience, string> = {
   'general-merchant': 'general merchants',
 };
 
-export type LogLevel = 'info' | 'out' | 'in' | 'skip' | 'warn' | 'system';
+export type LogLevel = 'info' | 'out' | 'in' | 'skip' | 'warn' | 'system' | 'decline';
 
 export type ChatMessage =
   | { kind: 'user'; text: string }
@@ -339,6 +340,16 @@ export async function runTurn(
       let processing = false;
 
       const processOne = async (reply: BroadcastReply): Promise<void> => {
+        // Declines come through the same reply subscription but with an
+        // explicit `declineReason` (vendor opted out and told us why).
+        // They never enter the chat / gate flow — surface them off to the
+        // side via the log + recorder.
+        if (reply.declineReason !== undefined) {
+          const reason = reply.declineReason || '(no reason given)';
+          handlers.log(`◌ ${reply.displayName} declined — ${reason}`, 'decline');
+          demoRecorder.decline(reply.displayName, reply.pubkey, reply.declineReason);
+          return;
+        }
         const currentLabel = getLabel(reply.pubkey);
         if (currentLabel === 'malicious') {
           handlers.log(`✗ malicious reply auto-skipped: ${reply.displayName}`, 'skip');
@@ -614,6 +625,12 @@ async function handleDmCall(
   let processing = false;
 
   const processOne = async (reply: DmReply): Promise<void> => {
+    if (reply.declineReason !== undefined) {
+      const reason = reply.declineReason || '(no reason given)';
+      handlers.log(`◌ ${reply.displayName} declined DM — ${reason}`, 'decline');
+      demoRecorder.decline(reply.displayName, reply.pubkey, reply.declineReason);
+      return;
+    }
     const currentLabel = getLabel(reply.pubkey);
     if (currentLabel === 'malicious') {
       handlers.log(`✗ malicious dm reply auto-skipped: ${reply.displayName}`, 'skip');

@@ -45,6 +45,8 @@ export interface BroadcastReply {
   agentType: AgentType;
   content: string;
   receivedAt: number;
+  /** Present when the vendor explicitly declined; reason if they gave one. */
+  declineReason?: string;
 }
 
 export interface BroadcastResult {

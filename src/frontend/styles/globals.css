@@ -1,0 +1,126 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light defaults kept around so the html class can opt-in later. */
+    --background: 220 16% 97%;
+    --foreground: 220 26% 14%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 26% 14%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 26% 14%;
+
+    --primary: 252 100% 68%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 14% 92%;
+    --secondary-foreground: 220 26% 14%;
+
+    --muted: 220 14% 95%;
+    --muted-foreground: 220 9% 46%;
+
+    --accent: 220 14% 92%;
+    --accent-foreground: 220 26% 14%;
+
+    --destructive: 348 100% 67%;
+    --destructive-foreground: 0 0% 100%;
+
+    --safe: 156 60% 55%;
+    --safe-foreground: 156 60% 8%;
+
+    --warn: 35 100% 64%;
+    --warn-foreground: 35 100% 10%;
+
+    --border: 220 13% 88%;
+    --input: 220 13% 88%;
+    --ring: 252 100% 68%;
+
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    /* Mapped from the prototype palette: --bg #0b0d12, --panel #141821,
+       --panel-2 #1c2230, --text #e6e9ef, --muted #8a93a4, --border #232a38,
+       --accent #7c5cff, --danger #ff5577, --safe #44d39a, --warn #ffb547. */
+    --background: 222 23% 6%;
+    --foreground: 220 20% 92%;
+
+    --card: 222 21% 11%;
+    --card-foreground: 220 20% 92%;
+
+    --popover: 222 21% 11%;
+    --popover-foreground: 220 20% 92%;
+
+    --primary: 252 100% 68%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 222 20% 15%;
+    --secondary-foreground: 220 20% 92%;
+
+    --muted: 222 20% 15%;
+    --muted-foreground: 220 11% 60%;
+
+    --accent: 222 20% 15%;
+    --accent-foreground: 220 20% 92%;
+
+    --destructive: 348 100% 67%;
+    --destructive-foreground: 0 0% 100%;
+
+    --safe: 156 60% 55%;
+    --safe-foreground: 156 60% 8%;
+
+    --warn: 35 100% 64%;
+    --warn-foreground: 35 100% 10%;
+
+    --border: 222 23% 18%;
+    --input: 222 23% 18%;
+    --ring: 252 100% 68%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html,
+  body,
+  #app {
+    height: 100%;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection {
+    background: hsl(var(--primary) / 0.35);
+    color: hsl(var(--foreground));
+  }
+  *:focus-visible {
+    outline: none;
+  }
+}
+
+/* Subtle scrollbar to fit the dark surfaces without using ScrollArea everywhere. */
+@layer utilities {
+  .thin-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+  .thin-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .thin-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 999px;
+  }
+  .thin-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}

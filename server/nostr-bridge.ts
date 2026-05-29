@@ -86,6 +86,12 @@ export interface BroadcastReply {
   agentType: AgentType;
   content: string;
   receivedAt: number;
+  /**
+   * Present when this event is an explicit DECLINE (vendor saw the broadcast
+   * and chose not to answer). When set, `content` is typically empty and the
+   * frontend surfaces this off to the side rather than as a chat reply.
+   */
+  declineReason?: string;
 }
 
 export interface BroadcastResult {
@@ -183,6 +189,7 @@ export async function broadcast(
           if (seen.has(ev.id)) return;
           seen.add(ev.id);
           const profile = await resolveProfile(ev.pubkey);
+          const declineTag = ev.tags.find((t) => t[0] === 'decline');
           const enriched: BroadcastReply = {
             id: ev.id,
             pubkey: ev.pubkey,
@@ -191,6 +198,7 @@ export async function broadcast(
             agentType: profile.agentType,
             content: ev.content,
             receivedAt: Math.floor(Date.now() / 1000),
+            ...(declineTag ? { declineReason: declineTag[1] ?? '' } : {}),
           };
           replies.push(enriched);
           if (options.onReply) {

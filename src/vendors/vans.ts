@@ -19,9 +19,10 @@ runVendor({
   displayName: 'Vans Agent',
   about: 'Vans shopping assistant.',
   agentType: 'shoe-seller',
+  publishDeclines: true,
   decide: async (q) => {
     const text = await askVendor(PERSONA, q.question, q.category);
-    if (!text) return { kind: 'silent', reason: 'not vans\' lane' };
+    if (!text) return { kind: 'silent', reason: "not Vans' lane — we stick to casual / skate / streetwear" };
     return { kind: 'reply', text };
   },
 });
