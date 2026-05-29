@@ -34,7 +34,7 @@ export async function listTools(): Promise<McpTool[]> {
   }));
 }
 
-export type AgentType = 'friend' | 'shoe-seller' | 'unknown';
+export type AgentType = 'friend' | 'shoe-seller' | 'teammate' | 'unknown';
 export { AUDIENCES, type Audience };
 
 export interface BroadcastReply {

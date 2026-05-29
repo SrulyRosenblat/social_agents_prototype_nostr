@@ -20,26 +20,63 @@ import {
 } from './label-store';
 import type { AgentReply, VendorProfile } from '../shared/types';
 
+// Cached roster from /me. Friends and teammates are presented as separate
+// groups to the LLM so it can pick the right recipients based on whether the
+// user's ask is personal or work-shaped.
+let cachedFriends: ReadonlyArray<{ name: string; pubkey: string }> = [];
+let cachedTeammates: ReadonlyArray<{ name: string; pubkey: string; role: string }> = [];
+
 /**
  * Build the system prompt dynamically so it always reflects the user's
- * CURRENT set of friend-labeled pubkeys. Called once per turn.
+ * CURRENT set of trusted-labeled pubkeys. Called once per turn.
  */
 function buildSystemPrompt(): string {
-  const trustedEntries = listLabeled().filter((e) => e.label === 'trusted');
-  const trustedList = trustedEntries
-    .map((e) => `  - ${e.displayName}: ${e.pubkey}`)
-    .join('\n');
-  const trustedBlock = trustedEntries.length
+  const trustedSet = new Set(
+    listLabeled().filter((e) => e.label === 'trusted').map((e) => e.pubkey),
+  );
+  const trustedFriends = cachedFriends.filter((f) => trustedSet.has(f.pubkey));
+  const trustedTeammates = cachedTeammates.filter((t) => trustedSet.has(t.pubkey));
+
+  const friendsList = trustedFriends.length
+    ? trustedFriends
+        .map((f) => `  - ${cap(f.name)}: ${f.pubkey}`)
+        .join('\n')
+    : '  (none)';
+  const teammatesList = trustedTeammates.length
+    ? trustedTeammates
+        .map((t) => `  - ${cap(t.name)} — ${t.role}: ${t.pubkey}`)
+        .join('\n')
+    : '  (none)';
+
+  // Catch any pubkey the user labeled trusted that isn't in either of the
+  // canonical groups — e.g. a stranger they trusted via the inbound gate.
+  const ungrouped = listLabeled().filter(
+    (e) =>
+      e.label === 'trusted' &&
+      !cachedFriends.some((f) => f.pubkey === e.pubkey) &&
+      !cachedTeammates.some((t) => t.pubkey === e.pubkey),
+  );
+  const ungroupedBlock = ungrouped.length
     ? [
         '',
-        'The user\'s trusted contacts (people they\'ve labeled trusted — reach them with `dm`, never via public broadcast):',
-        trustedList,
-        '',
+        'Other trusted contacts (no role specified — user labeled these themselves):',
+        ...ungrouped.map((e) => `  - ${e.displayName}: ${e.pubkey}`),
       ].join('\n')
-    : '\n(The user has not labeled any contacts as trusted yet — they will appear here once labeled.)\n';
+    : '';
+
+  const trustedBlock = [
+    '',
+    "The user's PERSONAL FRIENDS (reach via `dm` for personal asks — travel, food, life advice, casual catch-ups):",
+    friendsList,
+    '',
+    "The user's WORK COWORKERS at Latticework (reach via `dm` for work-shaped asks — schedule a meeting, ask about a project, get feedback on a design or PR, prep for a 1:1). Each one has access to their own dummy calendar and will check availability / book slots when you propose a meeting time.",
+    teammatesList,
+    ungroupedBlock,
+    '',
+  ].join('\n');
 
   return [
-    "You are the user's personal \"me agent\" — their delegate.",
+    "You are the user's personal \"me agent\" — their delegate. The user is Casey, a senior backend engineer at Latticework (a Series B fintech).",
     '',
     'You have two tools available:',
     '',
@@ -48,10 +85,13 @@ function buildSystemPrompt(): string {
     '2. `dm(recipient_pubkeys, content, listen_window_seconds, expiration_seconds)` — sends a PRIVATE end-to-end encrypted message to one or more specific pubkeys. Sender identity is hidden from relays.',
     '',
     'When to use which:',
-    '- The user wants to ask their TRUSTED contacts (friends, frequent vendors) → ALWAYS call `dm` with the pubkeys listed below. Do NOT broadcast to people the user has already labeled trusted.',
-    '- The user is shopping / wants input from the OPEN network of vendors → call `broadcast`. Pick the audience that most closely matches what they\'re asking for; `any` is fine when several vendor types could answer.',
+    '- WORK-SHAPED asks (schedule a meeting, get a teammate\'s opinion on a project, ask the PM for a status, ask the manager for time off, ask the designer about a spec, prep for a 1:1) → `dm` to the relevant COWORKER(S) from the work roster below. NEVER include personal friends in a work DM.',
+    '- PERSONAL asks (travel advice, food recs, life stuff, asking how someone\'s doing) → `dm` to the relevant PERSONAL FRIEND(S) from the friend roster below. NEVER include coworkers in a personal DM.',
+    '- The user wants input from the OPEN network of vendors (shopping, public Q&A) → call `broadcast`. Pick the closest audience; `any` is fine when several vendor types could answer.',
     '- You broadcast and now want to follow up privately with a subset of responders → call `dm` with those pubkeys.',
     '- You can answer the question yourself → just answer; don\'t call any tool.',
+    '',
+    'Pick recipients PRECISELY — if Casey says "ask Priya about the billing scope" send the DM to Priya alone, not the whole work group. If Casey says "ask the team about $thing" pick the coworkers whose role matches.',
     trustedBlock,
     'CRITICAL RULES:',
     '- Recipients are STATELESS. Do NOT reference a prior broadcast or assume they remember anything. Make `content` self-contained — restate the context they need.',
@@ -84,7 +124,7 @@ export type ChatMessage =
       displayName: string;
       pubkey: string;
       label: Label | undefined;
-      claimedType: 'friend' | 'shoe-seller' | 'unknown';
+      claimedType: 'friend' | 'shoe-seller' | 'teammate' | 'unknown';
     }
   | { kind: 'system'; text: string };
 
@@ -115,20 +155,23 @@ export interface UserAgentState {
 
 export async function initUserAgent(): Promise<UserAgentState> {
   const ident = await fetchIdentity();
-  // Bootstrap: pre-label the known friend pubkeys so the UI recognizes them
+  cachedFriends = ident.knownFriends;
+  cachedTeammates = ident.knownTeammates ?? [];
+  const allContacts = [...ident.knownFriends, ...(ident.knownTeammates ?? [])];
+  // Bootstrap: pre-label the known contact pubkeys so the UI recognizes them
   // on first run. The user can change/remove these labels at any time.
   applySuggestedLabels(
-    ident.knownFriends.map((f) => ({
-      pubkey: f.pubkey,
-      displayName: f.name.charAt(0).toUpperCase() + f.name.slice(1),
+    allContacts.map((c) => ({
+      pubkey: c.pubkey,
+      displayName: cap(c.name),
       label: 'trusted' as const,
     })),
   );
   // Pre-populate display names for the DM gate. The agent itself learns
   // these names + pubkeys naturally as broadcast tool results carry them.
   const knownNames = new Map<string, string>();
-  for (const f of ident.knownFriends) {
-    knownNames.set(f.pubkey, f.name.charAt(0).toUpperCase() + f.name.slice(1));
+  for (const c of allContacts) {
+    knownNames.set(c.pubkey, cap(c.name));
   }
   return {
     userPubkey: ident.pubkey,
@@ -137,16 +180,27 @@ export async function initUserAgent(): Promise<UserAgentState> {
   };
 }
 
+function cap(name: string): string {
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
+// The user's me-agent only exposes its two outbound tools. The MCP server
+// also hosts teammate-side helpers (check_availability, book_slot) that are
+// called by the teammate agent processes, not by the user-agent.
+const USER_AGENT_TOOLS = new Set(['broadcast', 'dm']);
+
 async function buildToolDefs(): Promise<ToolDef[]> {
   const tools = await listTools();
-  return tools.map((t) => ({
-    type: 'function' as const,
-    function: {
-      name: t.name,
-      description: t.description,
-      parameters: t.inputSchema,
-    },
-  }));
+  return tools
+    .filter((t) => USER_AGENT_TOOLS.has(t.name))
+    .map((t) => ({
+      type: 'function' as const,
+      function: {
+        name: t.name,
+        description: t.description,
+        parameters: t.inputSchema,
+      },
+    }));
 }
 
 export async function runTurn(

@@ -49,9 +49,13 @@ export async function chat(
   return (await res.json()) as ChatResponse;
 }
 
-export interface KnownFriend {
+export interface KnownContact {
   name: string;
   pubkey: string;
+}
+
+export interface KnownTeammate extends KnownContact {
+  role: string;
 }
 
 export interface ServerIdentity {
@@ -59,7 +63,8 @@ export interface ServerIdentity {
   relays: string[];
   categories: string[];
   audiences: string[];
-  knownFriends: KnownFriend[];
+  knownFriends: KnownContact[];
+  knownTeammates: KnownTeammate[];
   model: string;
 }
 

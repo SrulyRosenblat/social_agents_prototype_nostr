@@ -1,8 +1,16 @@
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 
-// Brand vendors (subscribe to category tags) + personal contacts (subscribe to the user's pubkey).
-const agents = ['nike', 'adidas', 'vans', 'rogue', 'alex', 'sam', 'pat', 'jordan'] as const;
+// Brand vendors (broadcast audience), personal contacts (DM), and corporate
+// teammates (DM, with their own calendar MCP tools).
+const agents = [
+  // shoe-sellers
+  'nike', 'adidas', 'vans', 'rogue',
+  // friends
+  'alex', 'sam', 'pat', 'jordan',
+  // teammates
+  'priya', 'marcus', 'jen', 'diego',
+] as const;
 
 const procs = agents.map((name) => {
   const entry = path.join('src', 'vendors', `${name}.ts`);

@@ -37,7 +37,7 @@ export type RespondDecision =
 
 // Self-claimed role tag — used only as a HINT for audience filtering and
 // for the user's first-time label suggestion. Trust is decided client-side.
-export type AgentType = 'friend' | 'shoe-seller';
+export type AgentType = 'friend' | 'shoe-seller' | 'teammate';
 
 /**
  * A self-contained private follow-up addressed only to this agent (after

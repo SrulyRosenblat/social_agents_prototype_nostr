@@ -43,7 +43,7 @@ const userPk = getPublicKey(userSk);
 const pool = new SimplePool();
 const relays = DEFAULT_RELAYS;
 
-export type AgentType = 'friend' | 'shoe-seller' | 'unknown';
+export type AgentType = 'friend' | 'shoe-seller' | 'teammate' | 'unknown';
 
 interface ProfileInfo {
   name?: string;
@@ -66,7 +66,9 @@ async function resolveProfile(pubkey: string): Promise<ProfileInfo> {
       };
       const rawType = parsed.agent_type ?? '';
       const agentType: AgentType =
-        rawType === 'friend' || rawType === 'shoe-seller' ? rawType : 'unknown';
+        rawType === 'friend' || rawType === 'shoe-seller' || rawType === 'teammate'
+          ? rawType
+          : 'unknown';
       profile = { name: parsed.name, about: parsed.about, agentType };
     } catch {
       /* keep empty */

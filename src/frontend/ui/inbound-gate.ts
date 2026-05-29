@@ -10,13 +10,14 @@ export type InboundDecisionAction =
 const CLAIMED_LABEL: Record<string, string> = {
   friend: 'claims: friend',
   'shoe-seller': 'claims: shoe-seller',
+  teammate: 'claims: teammate',
   unknown: 'no claim',
 };
 
 export function showInboundGate(
   reply: AgentReply,
   profile: VendorProfile,
-  claimedType: 'friend' | 'shoe-seller' | 'unknown',
+  claimedType: 'friend' | 'shoe-seller' | 'teammate' | 'unknown',
 ): Promise<InboundDecisionAction> {
   return new Promise((resolve) => {
     const backdrop = document.createElement('div');

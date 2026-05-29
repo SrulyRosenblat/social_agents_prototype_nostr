@@ -23,6 +23,12 @@ import {
   getUserPubkey,
   getRelays,
 } from './nostr-bridge';
+import {
+  checkAvailability as calCheckAvailability,
+  bookSlot as calBookSlot,
+  seedTeammateCalendar,
+  knownTeammateNames,
+} from './calendar-store';
 
 const apiKey = process.env.OPENROUTER_API_KEY;
 if (!apiKey) {
@@ -122,6 +128,63 @@ function buildMcpServer(): McpServer {
       return {
         content: [{ type: 'text', text: JSON.stringify(result) }],
       };
+    },
+  );
+
+  // ─── Teammate calendar tools ──────────────────────────────────────────────
+  // These are NOT used by the user's me-agent (the frontend filters its tool
+  // list to broadcast + dm). They're called by the teammate-agent processes,
+  // each connecting an MCP client at startup. The teammate passes its own
+  // pubkey on every call — there's no per-session identity binding, this is
+  // an in-process prototype.
+
+  server.tool(
+    'check_availability',
+    "Check a calendar owner's busy events overlapping [start_iso, end_iso). For teammate agents to consult their own schedule before agreeing to a meeting. Pass YOUR OWN pubkey as `pubkey` — the one printed in your process startup log.",
+    {
+      pubkey: z
+        .string()
+        .regex(/^[0-9a-f]{64}$/i, 'must be 64-char hex pubkey')
+        .describe('The calendar owner\'s pubkey. Teammates pass their own.'),
+      start_iso: z
+        .string()
+        .describe('ISO 8601 local-time start, e.g. "2026-05-28T15:00:00". No timezone suffix — interpreted as the local timezone.'),
+      end_iso: z
+        .string()
+        .describe('ISO 8601 local-time end, exclusive.'),
+    },
+    async ({ pubkey, start_iso, end_iso }) => {
+      ensureCalendarSeeded(pubkey);
+      const result = calCheckAvailability(pubkey, start_iso, end_iso);
+      return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+    },
+  );
+
+  server.tool(
+    'book_slot',
+    "Add an event to a calendar. Use AFTER `check_availability` confirms the slot is free. Returns ok+event on success, or error+conflicts if the slot is taken. Pass YOUR OWN pubkey.",
+    {
+      pubkey: z
+        .string()
+        .regex(/^[0-9a-f]{64}$/i, 'must be 64-char hex pubkey'),
+      start_iso: z
+        .string()
+        .describe('ISO 8601 local-time start, e.g. "2026-05-28T15:00:00".'),
+      duration_minutes: z
+        .number()
+        .int()
+        .min(5)
+        .max(480),
+      title: z
+        .string()
+        .min(1)
+        .max(120)
+        .describe('Short title for the event, e.g. "sync with Casey on auth migration".'),
+    },
+    async ({ pubkey, start_iso, duration_minutes, title }) => {
+      ensureCalendarSeeded(pubkey);
+      const result = calBookSlot(pubkey, start_iso, duration_minutes, title);
+      return { content: [{ type: 'text', text: JSON.stringify(result) }] };
     },
   );
 
@@ -288,15 +351,17 @@ import fs from 'node:fs';
 import nodePath from 'node:path';
 import { getPublicKey } from 'nostr-tools/pure';
 
-// Map of agent name (the local file under .vendor-keys/) → friend pubkey hex.
-// Used to suggest initial labels to the client UI on first load.
-// Vendors are intentionally NOT exposed — they should appear unlabeled (unknown)
-// to the user, who decides whether to recognize them.
-function listKnownFriendAgents(): Array<{ name: string; pubkey: string }> {
+// Resolve a list of local agent names into { name, pubkey } pairs by reading
+// .vendor-keys/<name>.hex. Used to suggest initial trusted-labels to the
+// client UI on first load. Shoe-sellers (and other open-network vendors) are
+// intentionally NOT exposed — they should appear unlabeled to the user, who
+// decides whether to recognize them.
+function resolveContactAgents(
+  names: readonly string[],
+): Array<{ name: string; pubkey: string; role?: string }> {
   const keyDir = nodePath.join(process.cwd(), '.vendor-keys');
   if (!fs.existsSync(keyDir)) return [];
-  const friendFiles = ['alex', 'sam', 'pat', 'jordan'];
-  return friendFiles
+  return names
     .map((name) => {
       const file = nodePath.join(keyDir, `${name}.hex`);
       if (!fs.existsSync(file)) return null;
@@ -309,6 +374,63 @@ function listKnownFriendAgents(): Array<{ name: string; pubkey: string }> {
       }
     })
     .filter((x): x is { name: string; pubkey: string } => x !== null);
+}
+
+const FRIEND_NAMES = ['alex', 'sam', 'pat', 'jordan'] as const;
+const TEAMMATE_ROLES: Record<string, string> = {
+  priya: 'product manager (billing + onboarding)',
+  marcus: 'engineering manager',
+  jen: 'peer engineer (SRE-leaning)',
+  diego: 'product designer',
+};
+
+// Seed each known teammate's in-memory calendar at server startup so the
+// calendar MCP tools return realistic conflicts before any teammate has
+// actually called them.
+function seedAllTeammateCalendars(): void {
+  const keyDir = nodePath.join(process.cwd(), '.vendor-keys');
+  if (!fs.existsSync(keyDir)) return;
+  for (const name of knownTeammateNames()) {
+    const file = nodePath.join(keyDir, `${name}.hex`);
+    if (!fs.existsSync(file)) continue;
+    try {
+      const hex = fs.readFileSync(file, 'utf8').trim();
+      const pk = getPublicKey(Uint8Array.from(Buffer.from(hex, 'hex')));
+      seedTeammateCalendar(pk, name);
+      seededPubkeys.add(pk);
+      console.log(`[calendar] seeded ${name} (${pk.slice(0, 8)}…) with this-week busy slots`);
+    } catch (err) {
+      console.error(`[calendar] failed to seed ${name}:`, err);
+    }
+  }
+}
+
+// Lazy seed fallback: if the server boots before the teammate processes have
+// generated their .vendor-keys files (first-time install), the startup seed
+// finds nothing. On the first calendar MCP call for a pubkey we don't know
+// yet, rescan .vendor-keys and seed if the pubkey belongs to a known
+// teammate name.
+const seededPubkeys = new Set<string>();
+function ensureCalendarSeeded(pubkey: string): void {
+  if (seededPubkeys.has(pubkey)) return;
+  seededPubkeys.add(pubkey); // mark even on miss to avoid repeat rescans
+  const keyDir = nodePath.join(process.cwd(), '.vendor-keys');
+  if (!fs.existsSync(keyDir)) return;
+  for (const name of knownTeammateNames()) {
+    const file = nodePath.join(keyDir, `${name}.hex`);
+    if (!fs.existsSync(file)) continue;
+    try {
+      const hex = fs.readFileSync(file, 'utf8').trim();
+      const pk = getPublicKey(Uint8Array.from(Buffer.from(hex, 'hex')));
+      if (pk === pubkey) {
+        seedTeammateCalendar(pk, name);
+        console.log(`[calendar] lazy-seeded ${name} (${pk.slice(0, 8)}…) on first calendar call`);
+        return;
+      }
+    } catch {
+      /* ignore */
+    }
+  }
 }
 
 app.get('/me', (c) =>
@@ -324,7 +446,11 @@ app.get('/me', (c) =>
       'tech-vendor',
       'general-merchant',
     ],
-    knownFriends: listKnownFriendAgents(),
+    knownFriends: resolveContactAgents(FRIEND_NAMES),
+    knownTeammates: resolveContactAgents(knownTeammateNames()).map((c) => ({
+      ...c,
+      role: TEAMMATE_ROLES[c.name] ?? 'coworker',
+    })),
     model,
   }),
 );
@@ -376,3 +502,4 @@ console.log(`[server] listening on http://localhost:${port}`);
 console.log(`[server] model: ${model}`);
 console.log(`[server] user pubkey: ${getUserPubkey()}`);
 console.log(`[server] mcp endpoint: http://localhost:${port}/mcp`);
+seedAllTeammateCalendars();
