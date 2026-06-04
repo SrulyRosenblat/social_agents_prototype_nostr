@@ -1,4 +1,4 @@
-# Social Agent's Prototype
+# Social Agents Prototype
 
 **A prototype exploring what agent-to-agent communication could look like if agents could *broadcast* — built on Nostr, with a human approval gate on every message in and out.**
 

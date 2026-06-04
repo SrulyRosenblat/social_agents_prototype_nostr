@@ -4,23 +4,14 @@
       <path d="M0,0 L10,5 L0,10 z" fill="#1f2937"/>
     </marker>
     <marker id="arrowGray" markerWidth="11" markerHeight="11" refX="8" refY="5" orient="auto" markerUnits="userSpaceOnUse">
-      <path d="M0,0 L9,5 L0,10 z" fill="#b0b6bf"/>
+      <path d="M0,0 L9,5 L0,10 z" fill="#f59e0b"/>
     </marker>
   </defs>
 
   <rect x="0" y="0" width="1740" height="840" fill="#ffffff"/>
 
   <!-- heading over the network -->
-  <text x="990" y="44" text-anchor="middle" font-size="16" font-weight="700" fill="#374151">The open network — every agent receives the broadcast, only the relevant ones reply</text>
-
-  <!-- ===== Return arrow (top): Answers -> Input gate -> User Agent ===== -->
-  <path d="M 1545 300 C 1545 110, 900 100, 470 100 C 320 100, 230 150, 195 300"
-        fill="none" stroke="#1f2937" stroke-width="2.5" marker-end="url(#arrow)"/>
-
-  <!-- Input gate (on the return path) -->
-  <line x1="660" y1="72" x2="660" y2="128" stroke="#8c52ff" stroke-width="3" stroke-dasharray="7 6"/>
-  <text x="660" y="156" text-anchor="middle" font-size="16" font-weight="700" fill="#8c52ff">Input gate</text>
-  <text x="660" y="177" text-anchor="middle" font-size="12.5" fill="#7c3aed">Vet every reply before it can enter the agent's context.</text>
+  <text x="1240" y="30" text-anchor="middle" font-size="16" font-weight="700" fill="#374151">The open network — every agent receives the broadcast, only the relevant ones reply</text>
 
   <!-- ===== User Agent ===== -->
   <rect x="40" y="300" width="290" height="200" rx="20" fill="#38b6ff"/>
@@ -46,11 +37,11 @@
   <text x="590" y="416" text-anchor="middle" font-size="16" fill="#ffffff">Miami under $300?</text>
 
   <!-- ===== broadcast arrows (dashed gray): Question -> EVERY agent ===== -->
-  <path d="M 702 380 C 770 300, 800 200, 866 134" fill="none" stroke="#b0b6bf" stroke-width="2" stroke-dasharray="2 6" marker-end="url(#arrowGray)"/>
-  <path d="M 702 388 C 780 340, 800 290, 866 260" fill="none" stroke="#b0b6bf" stroke-width="2" stroke-dasharray="2 6" marker-end="url(#arrowGray)"/>
-  <path d="M 702 400 L 866 386" fill="none" stroke="#b0b6bf" stroke-width="2" stroke-dasharray="2 6" marker-end="url(#arrowGray)"/>
-  <path d="M 702 412 C 780 460, 800 510, 866 512" fill="none" stroke="#b0b6bf" stroke-width="2" stroke-dasharray="2 6" marker-end="url(#arrowGray)"/>
-  <path d="M 702 420 C 770 500, 800 600, 866 638" fill="none" stroke="#b0b6bf" stroke-width="2" stroke-dasharray="2 6" marker-end="url(#arrowGray)"/>
+  <path d="M 702 380 C 770 300, 800 200, 866 134" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="4 5" marker-end="url(#arrowGray)"/>
+  <path d="M 702 388 C 780 340, 800 290, 866 260" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="4 5" marker-end="url(#arrowGray)"/>
+  <path d="M 702 400 L 866 386" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="4 5" marker-end="url(#arrowGray)"/>
+  <path d="M 702 412 C 780 460, 800 510, 866 512" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="4 5" marker-end="url(#arrowGray)"/>
+  <path d="M 702 420 C 770 500, 800 600, 866 638" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="4 5" marker-end="url(#arrowGray)"/>
 
   <!-- ===== Agents on the network (airlines interleaved with others) ===== -->
   <!-- 1 Delta (airline, replies) -->
@@ -103,8 +94,17 @@
 
   <!-- ===== Legend ===== -->
   <rect x="478" y="636" width="316" height="86" rx="12" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5"/>
-  <line x1="498" y1="664" x2="548" y2="664" stroke="#b0b6bf" stroke-width="2" stroke-dasharray="2 6"/>
+  <line x1="498" y1="664" x2="548" y2="664" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="4 5"/>
   <text x="560" y="669" font-size="13" fill="#475569">broadcast — reaches every agent</text>
   <line x1="498" y1="696" x2="548" y2="696" stroke="#1f2937" stroke-width="2.5"/>
   <text x="560" y="701" font-size="13" fill="#475569">reply — only the relevant agents answer</text>
+
+  <!-- ===== Return arrow (drawn last so it sits OVER the agents): Answers -> Input gate -> User Agent ===== -->
+  <path d="M 1545 300 C 1565 130, 1480 56, 1280 56 L 540 56 C 360 56, 235 150, 195 300"
+        fill="none" stroke="#1f2937" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <!-- Input gate (on the return path) -->
+  <line x1="660" y1="38" x2="660" y2="96" stroke="#8c52ff" stroke-width="3" stroke-dasharray="7 6"/>
+  <text x="660" y="124" text-anchor="middle" font-size="16" font-weight="700" fill="#8c52ff">Input gate</text>
+  <text x="660" y="145" text-anchor="middle" font-size="12.5" fill="#7c3aed">Vet every reply before it can enter the agent's context.</text>
 </svg>
