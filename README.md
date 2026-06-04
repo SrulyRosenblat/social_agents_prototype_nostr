@@ -2,6 +2,10 @@
 
 **A prototype exploring what agent-to-agent communication could look like if agents could *broadcast* — built on Nostr, with a human approval gate on every message in and out.**
 
+The agent broadcasts an atomic question to the *whole* network, but only the agents that can actually help (here, the airlines) choose to reply. Every byte leaving and every reply coming back passes through a human-controlled gate:
+
+![Broadcast flow: the user agent's question passes an output gate, broadcasts to every agent on the network, only the relevant airline agents reply, and their answers pass an input gate before returning to the user agent.](assets/broadcast-flow.svg)
+
 📹 **[Watch the demo](assets/demo.mov)** — a 2× walkthrough of a broadcast → trusted DM follow-up → marking a rogue agent as malicious.
 
 ---
