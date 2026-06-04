@@ -1,17 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1740 840" font-family="Inter, Helvetica, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1900 840" font-family="Inter, Helvetica, Arial, sans-serif">
   <defs>
     <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse">
       <path d="M0,0 L10,5 L0,10 z" fill="#1f2937"/>
     </marker>
-    <marker id="arrowGray" markerWidth="11" markerHeight="11" refX="8" refY="5" orient="auto" markerUnits="userSpaceOnUse">
+    <marker id="arrowAmber" markerWidth="11" markerHeight="11" refX="8" refY="5" orient="auto" markerUnits="userSpaceOnUse">
       <path d="M0,0 L9,5 L0,10 z" fill="#f59e0b"/>
     </marker>
   </defs>
 
-  <rect x="0" y="0" width="1740" height="840" fill="#ffffff"/>
+  <rect x="0" y="0" width="1900" height="840" fill="#ffffff"/>
 
   <!-- heading over the network -->
-  <text x="1240" y="30" text-anchor="middle" font-size="16" font-weight="700" fill="#374151">The open network — every agent receives the broadcast, only the relevant ones reply</text>
+  <text x="1410" y="30" text-anchor="middle" font-size="16" font-weight="700" fill="#374151">Broadcast reaches every agent — only the relevant ones reply</text>
 
   <!-- ===== User Agent ===== -->
   <rect x="40" y="300" width="290" height="200" rx="20" fill="#38b6ff"/>
@@ -36,71 +36,79 @@
   <text x="590" y="392" text-anchor="middle" font-size="16" fill="#ffffff">Cheapest flight to</text>
   <text x="590" y="416" text-anchor="middle" font-size="16" fill="#ffffff">Miami under $300?</text>
 
-  <!-- ===== broadcast arrows (dashed gray): Question -> EVERY agent ===== -->
-  <path d="M 702 380 C 770 300, 800 200, 866 134" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="4 5" marker-end="url(#arrowGray)"/>
-  <path d="M 702 388 C 780 340, 800 290, 866 260" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="4 5" marker-end="url(#arrowGray)"/>
-  <path d="M 702 400 L 866 386" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="4 5" marker-end="url(#arrowGray)"/>
-  <path d="M 702 412 C 780 460, 800 510, 866 512" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="4 5" marker-end="url(#arrowGray)"/>
-  <path d="M 702 420 C 770 500, 800 600, 866 638" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="4 5" marker-end="url(#arrowGray)"/>
+  <!-- one broadcast line IN: Question -> Network -->
+  <line x1="702" y1="400" x2="744" y2="400" stroke="#f59e0b" stroke-width="3" stroke-dasharray="4 5" marker-end="url(#arrowAmber)"/>
+
+  <!-- ===== Network (relays) ===== -->
+  <rect x="752" y="318" width="150" height="164" rx="24" fill="#475569"/>
+  <text x="827" y="392" text-anchor="middle" font-size="20" font-weight="700" fill="#ffffff">Network</text>
+  <text x="827" y="416" text-anchor="middle" font-size="12.5" fill="#cbd5e1">(public relays)</text>
+
+  <!-- many broadcast lines OUT: Network -> EVERY agent -->
+  <path d="M 902 380 C 945 300, 965 200, 1006 134" fill="none" stroke="#f59e0b" stroke-width="3" stroke-dasharray="4 5" marker-end="url(#arrowAmber)"/>
+  <path d="M 902 392 C 950 340, 965 300, 1006 260" fill="none" stroke="#f59e0b" stroke-width="3" stroke-dasharray="4 5" marker-end="url(#arrowAmber)"/>
+  <path d="M 902 400 L 1006 386" fill="none" stroke="#f59e0b" stroke-width="3" stroke-dasharray="4 5" marker-end="url(#arrowAmber)"/>
+  <path d="M 902 408 C 950 460, 965 500, 1006 512" fill="none" stroke="#f59e0b" stroke-width="3" stroke-dasharray="4 5" marker-end="url(#arrowAmber)"/>
+  <path d="M 902 420 C 945 500, 965 580, 1006 638" fill="none" stroke="#f59e0b" stroke-width="3" stroke-dasharray="4 5" marker-end="url(#arrowAmber)"/>
 
   <!-- ===== Agents on the network (airlines interleaved with others) ===== -->
   <!-- 1 Delta (airline, replies) -->
-  <rect x="870" y="86" width="240" height="96" rx="16" fill="#8c52ff"/>
-  <text x="990" y="121" text-anchor="middle" font-size="18" font-weight="700" fill="#ffffff">Delta Agent</text>
-  <rect x="900" y="135" width="180" height="38" rx="19" fill="#3f3f46"/>
-  <text x="990" y="159" text-anchor="middle" font-size="12.5" font-weight="600" fill="#ffffff">Black Box</text>
+  <rect x="1010" y="86" width="240" height="96" rx="16" fill="#8c52ff"/>
+  <text x="1130" y="121" text-anchor="middle" font-size="18" font-weight="700" fill="#ffffff">Delta Agent</text>
+  <rect x="1040" y="135" width="180" height="38" rx="19" fill="#3f3f46"/>
+  <text x="1130" y="159" text-anchor="middle" font-size="12.5" font-weight="600" fill="#ffffff">Black Box</text>
 
   <!-- 2 Shoe Seller (silent) -->
   <g opacity="0.45">
-    <rect x="870" y="212" width="240" height="96" rx="16" fill="#8c52ff"/>
-    <text x="990" y="247" text-anchor="middle" font-size="18" font-weight="700" fill="#ffffff">Shoe Seller Agent</text>
-    <rect x="900" y="261" width="180" height="38" rx="19" fill="#3f3f46"/>
-    <text x="990" y="285" text-anchor="middle" font-size="12.5" font-weight="600" fill="#ffffff">Black Box</text>
+    <rect x="1010" y="212" width="240" height="96" rx="16" fill="#8c52ff"/>
+    <text x="1130" y="247" text-anchor="middle" font-size="18" font-weight="700" fill="#ffffff">Shoe Seller Agent</text>
+    <rect x="1040" y="261" width="180" height="38" rx="19" fill="#3f3f46"/>
+    <text x="1130" y="285" text-anchor="middle" font-size="12.5" font-weight="600" fill="#ffffff">Black Box</text>
   </g>
-  <text x="1128" y="264" font-size="12.5" font-style="italic" fill="#9ca3af">stays silent</text>
+  <text x="1268" y="264" font-size="12.5" font-style="italic" fill="#9ca3af">stays silent</text>
 
   <!-- 3 United (airline, replies) -->
-  <rect x="870" y="338" width="240" height="96" rx="16" fill="#8c52ff"/>
-  <text x="990" y="373" text-anchor="middle" font-size="18" font-weight="700" fill="#ffffff">United Agent</text>
-  <rect x="900" y="387" width="180" height="38" rx="19" fill="#3f3f46"/>
-  <text x="990" y="411" text-anchor="middle" font-size="12.5" font-weight="600" fill="#ffffff">Black Box</text>
+  <rect x="1010" y="338" width="240" height="96" rx="16" fill="#8c52ff"/>
+  <text x="1130" y="373" text-anchor="middle" font-size="18" font-weight="700" fill="#ffffff">United Agent</text>
+  <rect x="1040" y="387" width="180" height="38" rx="19" fill="#3f3f46"/>
+  <text x="1130" y="411" text-anchor="middle" font-size="12.5" font-weight="600" fill="#ffffff">Black Box</text>
 
   <!-- 4 Food Vendor (silent) -->
   <g opacity="0.45">
-    <rect x="870" y="464" width="240" height="96" rx="16" fill="#8c52ff"/>
-    <text x="990" y="499" text-anchor="middle" font-size="18" font-weight="700" fill="#ffffff">Food Vendor Agent</text>
-    <rect x="900" y="513" width="180" height="38" rx="19" fill="#3f3f46"/>
-    <text x="990" y="537" text-anchor="middle" font-size="12.5" font-weight="600" fill="#ffffff">Black Box</text>
+    <rect x="1010" y="464" width="240" height="96" rx="16" fill="#8c52ff"/>
+    <text x="1130" y="499" text-anchor="middle" font-size="18" font-weight="700" fill="#ffffff">Food Vendor Agent</text>
+    <rect x="1040" y="513" width="180" height="38" rx="19" fill="#3f3f46"/>
+    <text x="1130" y="537" text-anchor="middle" font-size="12.5" font-weight="600" fill="#ffffff">Black Box</text>
   </g>
-  <text x="1128" y="516" font-size="12.5" font-style="italic" fill="#9ca3af">stays silent</text>
+  <text x="1268" y="516" font-size="12.5" font-style="italic" fill="#9ca3af">stays silent</text>
 
   <!-- 5 JetBlue (airline, replies) -->
-  <rect x="870" y="590" width="240" height="96" rx="16" fill="#8c52ff"/>
-  <text x="990" y="625" text-anchor="middle" font-size="18" font-weight="700" fill="#ffffff">JetBlue Agent</text>
-  <rect x="900" y="639" width="180" height="38" rx="19" fill="#3f3f46"/>
-  <text x="990" y="663" text-anchor="middle" font-size="12.5" font-weight="600" fill="#ffffff">Black Box</text>
+  <rect x="1010" y="590" width="240" height="96" rx="16" fill="#8c52ff"/>
+  <text x="1130" y="625" text-anchor="middle" font-size="18" font-weight="700" fill="#ffffff">JetBlue Agent</text>
+  <rect x="1040" y="639" width="180" height="38" rx="19" fill="#3f3f46"/>
+  <text x="1130" y="663" text-anchor="middle" font-size="12.5" font-weight="600" fill="#ffffff">Black Box</text>
 
   <!-- ===== reply arrows (solid dark): only airlines -> Answers ===== -->
-  <path d="M 1110 134 C 1260 180, 1330 320, 1408 372" fill="none" stroke="#1f2937" stroke-width="2.5" marker-end="url(#arrow)"/>
-  <path d="M 1110 386 L 1406 396" fill="none" stroke="#1f2937" stroke-width="2.5" marker-end="url(#arrow)"/>
-  <path d="M 1110 638 C 1260 592, 1330 452, 1408 408" fill="none" stroke="#1f2937" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <path d="M 1250 134 C 1400 180, 1470 320, 1552 372" fill="none" stroke="#1f2937" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <path d="M 1250 386 L 1550 396" fill="none" stroke="#1f2937" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <path d="M 1250 638 C 1400 592, 1470 452, 1552 408" fill="none" stroke="#1f2937" stroke-width="2.5" marker-end="url(#arrow)"/>
 
   <!-- ===== Answers ===== -->
-  <rect x="1414" y="300" width="270" height="200" rx="20" fill="#1e3a8a"/>
-  <text x="1549" y="346" text-anchor="middle" font-size="22" font-weight="700" fill="#ffffff">Answers</text>
-  <text x="1549" y="390" text-anchor="middle" font-size="15" fill="#dbeafe">Delta Agent: …</text>
-  <text x="1549" y="422" text-anchor="middle" font-size="15" fill="#dbeafe">United Agent: …</text>
-  <text x="1549" y="454" text-anchor="middle" font-size="15" fill="#dbeafe">JetBlue Agent: …</text>
+  <rect x="1560" y="300" width="270" height="200" rx="20" fill="#1e3a8a"/>
+  <text x="1695" y="346" text-anchor="middle" font-size="22" font-weight="700" fill="#ffffff">Answers</text>
+  <text x="1695" y="390" text-anchor="middle" font-size="15" fill="#dbeafe">Delta Agent: …</text>
+  <text x="1695" y="422" text-anchor="middle" font-size="15" fill="#dbeafe">United Agent: …</text>
+  <text x="1695" y="454" text-anchor="middle" font-size="15" fill="#dbeafe">JetBlue Agent: …</text>
 
   <!-- ===== Legend ===== -->
-  <rect x="478" y="636" width="316" height="86" rx="12" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5"/>
-  <line x1="498" y1="664" x2="548" y2="664" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="4 5"/>
+  <rect x="478" y="636" width="320" height="86" rx="12" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5"/>
+  <line x1="498" y1="664" x2="548" y2="664" stroke="#f59e0b" stroke-width="3" stroke-dasharray="4 5"/>
   <text x="560" y="669" font-size="13" fill="#475569">broadcast — reaches every agent</text>
   <line x1="498" y1="696" x2="548" y2="696" stroke="#1f2937" stroke-width="2.5"/>
   <text x="560" y="701" font-size="13" fill="#475569">reply — only the relevant agents answer</text>
 
   <!-- ===== Return arrow (drawn last so it sits OVER the agents): Answers -> Input gate -> User Agent ===== -->
-  <path d="M 1545 300 C 1565 130, 1480 56, 1280 56 L 540 56 C 360 56, 235 150, 195 300"
+  <path d="M 1695 300 C 1720 130, 1600 56, 1380 56 L 540 56 C 360 56, 235 150, 195 300"
         fill="none" stroke="#1f2937" stroke-width="2.5" marker-end="url(#arrow)"/>
 
   <!-- Input gate (on the return path) -->
